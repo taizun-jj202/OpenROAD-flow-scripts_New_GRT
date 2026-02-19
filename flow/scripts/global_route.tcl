@@ -25,7 +25,10 @@ proc global_route_helper { } {
 
   pin_access {*}$additional_args
 
+  set gr_start [clock milliseconds]
   set result [catch { do_global_route $res_aware } errMsg]
+  set gr_elapsed [expr {[clock milliseconds] - $gr_start}]
+  puts "[clock format [clock seconds] -format {%Y-%m-%d %H:%M:%S}] global_route runtime: $gr_elapsed ms"
 
   if { $result != 0 } {
     if { !$::env(GENERATE_ARTIFACTS_ON_FAILURE) } {

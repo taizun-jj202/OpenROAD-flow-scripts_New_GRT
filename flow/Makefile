@@ -1,6 +1,6 @@
 # settings.mk is not under source control. Put variables into this
 # file to avoid having to adding the to the make command line.
--include settings.mk
+#-include settings.mk
 
 # ==============================================================================
 # Uncomment or add the design to run
@@ -80,6 +80,8 @@
 #DESIGN_CONFIG=./designs/ihp-sg13g2/spi/config.mk
 #DESIGN_CONFIG=./designs/ihp-sg13g2/riscv32i/config.mk
 #DESIGN_CONFIG=./designs/ihp-sg13g2/i2c-gpio-expander/config.mk
+
+OPENROAD_EXE := /root/OpenROAD_New_GRT/build/bin/ornewgr2
 
 # Default design
 DESIGN_CONFIG ?= ./designs/nangate45/gcd/config.mk
@@ -235,7 +237,7 @@ synth-report: synth
 
 .PHONY: do-synth-report
 do-synth-report:
-	($(TIME_CMD) $(OPENROAD_CMD) $(SCRIPTS_DIR)/synth_metrics.tcl) 2>&1 | tee $(abspath $(LOG_DIR)/1_2_yosys_metrics.log)
+	($(TIME_CMD) $(OPENROAD_EXE) -no_init -exit $(SCRIPTS_DIR)/synth_metrics.tcl) 2>&1 | tee $(abspath $(LOG_DIR)/1_2_yosys_metrics.log)
 
 .PHONY: memory
 memory:
@@ -312,7 +314,7 @@ SUB_MAKE = $(MAKE) $(foreach V,$(COMMAND_LINE_ARGS), $(if $($V),$V=$(shell echo 
 UNSET_AND_MAKE = @bash -c '$(UNSET_VARS); $(SUB_MAKE) $$@' --
 
 $(OBJECTS_DIR)/copyright.txt:
-	@$(OPENROAD_CMD) $(SCRIPTS_DIR)/noop.tcl
+	@$(OPENROAD_EXE) -exit $(SCRIPTS_DIR)/noop.tcl
 	mkdir -p $(OBJECTS_DIR)
 	@touch $(OBJECTS_DIR)/copyright.txt
 
@@ -639,7 +641,7 @@ generate_abstract: $(RESULTS_DIR)/6_final.gds $(RESULTS_DIR)/6_final.def  $(RESU
 .PHONY: do-generate_abstract
 do-generate_abstract:
 	mkdir -p $(LOG_DIR) $(REPORTS_DIR)
-	($(TIME_CMD) $(OPENROAD_CMD) $(SCRIPTS_DIR)/generate_abstract.tcl -metrics $(LOG_DIR)/generate_abstract.json) 2>&1 | tee $(abspath $(LOG_DIR)/generate_abstract.log)
+	($(TIME_CMD) $(OPENROAD_EXE) -no_init -exit $(SCRIPTS_DIR)/generate_abstract.tcl -metrics $(LOG_DIR)/generate_abstract.json) 2>&1 | tee $(abspath $(LOG_DIR)/generate_abstract.log)
 
 .PHONY: clean_abstract
 clean_abstract:
@@ -699,7 +701,7 @@ else
 endif
 
 $(RESULTS_DIR)/6_final.cdl: $(RESULTS_DIR)/6_final.v
-	($(TIME_CMD) $(OPENROAD_CMD) $(SCRIPTS_DIR)/cdl.tcl) 2>&1 | tee $(abspath $(LOG_DIR)/6_cdl.log)
+	($(TIME_CMD) $(OPENROAD_EXE) -no_init -exit $(SCRIPTS_DIR)/cdl.tcl) 2>&1 | tee $(abspath $(LOG_DIR)/6_cdl.log)
 
 $(OBJECTS_DIR)/6_final_concat.cdl: $(RESULTS_DIR)/6_final.cdl $(CDL_FILE)
 	cat $^ > $@
@@ -786,11 +788,11 @@ $(foreach file,$(RESULTS_ODB),$(eval $(call OPEN_GUI,$(file),ODB_FILE)))
 
 # Write a def for the corresponding odb
 $(foreach file,$(RESULTS_ODB),$(file).def): %.def:
-	ODB_FILE=$(RESULTS_DIR)/$* DEF_FILE=$(RESULTS_DIR)/$@ $(OPENROAD_CMD) $(SCRIPTS_DIR)/write_def.tcl
+	ODB_FILE=$(RESULTS_DIR)/$* DEF_FILE=$(RESULTS_DIR)/$@ $(OPENROAD_EXE) -no_init -exit $(SCRIPTS_DIR)/write_def.tcl
 #
 # Write a verilog for the corresponding odb
 $(foreach file,$(RESULTS_ODB),$(file).v): %.v:
-	ODB_FILE=$(RESULTS_DIR)/$* VERILOG_FILE=$(RESULTS_DIR)/$@ $(OPENROAD_CMD) $(SCRIPTS_DIR)/write_verilog.tcl
+	ODB_FILE=$(RESULTS_DIR)/$* VERILOG_FILE=$(RESULTS_DIR)/$@ $(OPENROAD_EXE) -no_init -exit $(SCRIPTS_DIR)/write_verilog.tcl
 
 # Drop into yosys with all environment variables, useful to for instance
 # debug synthesis, or run other commands aftewards, such as "show" to
@@ -822,7 +824,7 @@ klayout:
 .phony: run
 run:
 	@mkdir -p $(RESULTS_DIR) $(LOG_DIR) $(REPORTS_DIR) $(OBJECTS_DIR)
-	($(OPENROAD_CMD) -no_splash $(if $(filter %.py,$(RUN_SCRIPT)),-python) $(RUN_SCRIPT) 2>&1 | tee $(abspath $(LOG_DIR)/$(RUN_LOG_NAME_STEM).log))
+	($(OPENROAD_EXE) -no_splash -no_init -exit $(if $(filter %.py,$(RUN_SCRIPT)),-python) $(RUN_SCRIPT) 2>&1 | tee $(abspath $(LOG_DIR)/$(RUN_LOG_NAME_STEM).log))
 
 export RUN_YOSYS_ARGS ?= -c $(SCRIPTS_DIR)/yosys_keep.tcl
 .phony: run-yosys
